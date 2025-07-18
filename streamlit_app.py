@@ -23,11 +23,13 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Disable proxy settings that might interfere with OpenAI client on Streamlit Cloud
-os.environ.pop('HTTP_PROXY', None)
-os.environ.pop('HTTPS_PROXY', None)
-os.environ.pop('http_proxy', None)
-os.environ.pop('https_proxy', None)
+# Disable ALL proxy settings that might interfere with OpenAI client on Streamlit Cloud
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
+# Clear all proxy environment variables
+for proxy_var in ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy']:
+    os.environ.pop(proxy_var, None)
 
 def get_api_key():
     """Get API key from Streamlit secrets or environment"""
@@ -316,8 +318,12 @@ def main():
                             with st.spinner(f"Generating {name} sample audio..."):
                                 # Initialize OpenAI client for sample generation
                                 try:
+                                    # Force OpenAI client to bypass proxy settings completely
+                                    import httpx
+                                    http_client = httpx.Client(proxies=None, timeout=30.0)
                                     client = OpenAI(
                                         api_key=api_key,
+                                        http_client=http_client,
                                         timeout=30.0,
                                         max_retries=3
                                     )
@@ -395,9 +401,12 @@ def main():
                     try:
                         # Initialize OpenAI client with proper error handling
                         try:
-                            # Initialize with explicit parameters to avoid proxy injection
+                            # Force OpenAI client to bypass proxy settings completely
+                            import httpx
+                            http_client = httpx.Client(proxies=None, timeout=30.0)
                             client = OpenAI(
                                 api_key=api_key,
+                                http_client=http_client,
                                 timeout=30.0,
                                 max_retries=3
                             )
