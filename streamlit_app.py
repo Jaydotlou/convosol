@@ -31,32 +31,67 @@ def get_api_key():
         # Fallback to environment variable (for local development)
         return os.getenv("OPENAI_API_KEY")
 
-def heroicon(name, size="w-5 h-5"):
-    """Return heroicon SVG as HTML"""
+def heroicon(name, size="16"):
+    """Return heroicon as emoji fallback for better compatibility"""
     icons = {
-        "microphone": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>''',
-        "upload": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>''',
-        "users": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"></path></svg>''',
-        "chart": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>''',
-        "clock": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>''',
-        "shield": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>''',
-        "cog": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>''',
-        "play": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.586a1 1 0 01.707.293l2.414 2.414a1 1 0 00.707.293H15M9 10V9a2 2 0 012-2h2a2 2 0 012 2v1M9 10v5a2 2 0 002 2h2a2 2 0 002-2v-5"></path></svg>''',
-        "download": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>''',
-        "exclamation": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z"></path></svg>''',
-        "check": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>''',
-        "folder": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"></path></svg>''',
-        "document": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>''',
-        "sparkles": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path></svg>''',
-        "target": f'''<svg class="{size}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>''',
+        "microphone": "🎤",
+        "upload": "📁",
+        "users": "👥",
+        "chart": "📊",
+        "clock": "⏰",
+        "shield": "🛡️",
+        "cog": "⚙️",
+        "play": "▶️",
+        "download": "💾",
+        "exclamation": "⚠️",
+        "check": "✅",
+        "folder": "📁",
+        "document": "📄",
+        "sparkles": "✨",
+        "target": "🎯",
     }
     return icons.get(name, "")
+
+def generate_sample_audio_on_demand(scenario_name, script_text, client):
+    """Generate sample audio on-demand using OpenAI TTS"""
+    try:
+        response = client.audio.speech.create(
+            model="tts-1",
+            voice="alloy",
+            input=script_text,
+            speed=1.0
+        )
+        
+        # Create a temporary file
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
+        response.stream_to_file(temp_file.name)
+        return temp_file.name
+    except Exception as e:
+        st.error(f"Error generating sample audio: {str(e)}")
+        return None
+
+def get_sample_scenarios():
+    """Get sample conversation scenarios"""
+    return {
+        "Safety Briefing": {
+            "script": "Safety Manager: Good morning everyone. Let's start with our weekly safety review. We had an incident yesterday with improper PPE usage. John: Yes, I noticed some workers weren't wearing safety glasses in the welding area. Safety Manager: That's unacceptable. We need to reinforce our safety protocols immediately. All employees must wear proper protective equipment at all times. John: I'll schedule additional training sessions for the welding department. Safety Manager: Good. Let's also review our lockout tagout procedures to ensure everyone understands the importance of safety first.",
+            "type": "Unidirectional"
+        },
+        "Quality Control Meeting": {
+            "script": "QC Manager: We need to discuss the quality issues found in yesterday's production batch. Inspector: I found defects in 15% of the units from batch 237. The main issue is with the tolerance levels on the mounting brackets. QC Manager: What's causing this deviation? Inspector: It appears to be a calibration issue with machine number 3. The tool wear indicators show it's due for maintenance. QC Manager: We need to halt production on that machine immediately and quarantine all affected parts until we can verify quality standards are met.",
+            "type": "Bidirectional"
+        },
+        "Production Planning Crisis": {
+            "script": "Production Manager: We have a critical situation. Our main customer just moved up their delivery deadline by two weeks. Supervisor: We're already running at 85% capacity. To meet the new deadline, we'd need overtime and weekend shifts. Production Manager: What's the impact on our other orders? Supervisor: We'd have to delay three smaller orders by at least a week. Production Manager: This customer represents 40% of our annual business. We need to make this work. Authorize overtime and contact the affected customers to negotiate new delivery dates.",
+            "type": "Bidirectional"
+        }
+    }
 
 def load_sample_audio_files():
     """Load available sample audio files for users to test"""
     sample_files = {}
     
-    # Check for local sample files
+    # Check for local sample files first
     sample_dir = "sample_audio"
     if os.path.exists(sample_dir):
         sample_mappings = {
@@ -74,8 +109,20 @@ def load_sample_audio_files():
                 file_size = os.path.getsize(filepath) / 1024  # KB
                 sample_files[display_name] = {
                     "path": filepath,
-                    "size": f"{file_size:.1f} KB"
+                    "size": f"{file_size:.1f} KB",
+                    "type": "Pre-generated"
                 }
+    
+    # If no local files, offer on-demand generation
+    if not sample_files:
+        scenarios = get_sample_scenarios()
+        for name, data in scenarios.items():
+            sample_files[name] = {
+                "path": None,  # Will be generated on demand
+                "size": "Generate on demand",
+                "type": data["type"],
+                "script": data["script"]
+            }
     
     return sample_files
 
@@ -196,50 +243,139 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    # Custom CSS for heroicons
+    # Custom CSS for professional styling
     st.markdown("""
     <style>
+        /* Global styling */
+        .main .block-container {
+            padding-top: 2rem;
+            padding-bottom: 2rem;
+        }
+        
+        /* Hero icons styling */
         .hero-icon {
             display: inline-block;
             vertical-align: middle;
             margin-right: 8px;
         }
+        
+        /* Card styling */
         .metric-card {
             background: white;
-            padding: 1rem;
-            border-radius: 8px;
+            padding: 1.5rem;
+            border-radius: 12px;
             border: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
         }
+        
+        /* Speaker tags */
         .speaker-tag {
             display: inline-block;
-            padding: 4px 8px;
-            margin: 2px;
-            border-radius: 12px;
-            font-size: 0.8rem;
-            font-weight: 500;
+            padding: 6px 12px;
+            margin: 4px;
+            border-radius: 16px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         .speaker-a { background: #dbeafe; color: #1e40af; }
         .speaker-b { background: #dcfce7; color: #166534; }
         .speaker-c { background: #fef3c7; color: #92400e; }
+        
+        /* Header styling */
+        .main-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        /* Sidebar styling */
+        .sidebar .sidebar-content {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 12px;
+        }
+        
+        /* Info boxes */
+        .info-box {
+            background: #f0f9ff;
+            border: 1px solid #0ea5e9;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .success-box {
+            background: #f0fdf4;
+            border: 1px solid #22c55e;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        .warning-box {
+            background: #fffbeb;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        
+        /* Footer */
         .footer {
             text-align: center;
             color: #6b7280;
             font-size: 14px;
-            margin-top: 2rem;
-            padding: 1rem;
-            border-top: 1px solid #e5e7eb;
+            margin-top: 3rem;
+            padding: 2rem;
+            border-top: 2px solid #e5e7eb;
+            background: #f9fafb;
+            border-radius: 12px;
+        }
+        
+        /* Button styling */
+        .stButton > button {
+            border-radius: 8px;
+            border: 1px solid #d1d5db;
+            background: white;
+            color: #374151;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .stButton > button:hover {
+            background: #f3f4f6;
+            border-color: #9ca3af;
+        }
+        
+        /* Tab styling */
+        .stTabs [data-baseweb="tab-list"] {
+            gap: 8px;
+        }
+        
+        .stTabs [data-baseweb="tab"] {
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
         }
     </style>
     """, unsafe_allow_html=True)
     
     # Header
-    st.markdown(f"""
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <h1>{heroicon("microphone", "w-8 h-8")} AI Speech Recognition & Analysis Platform</h1>
-        <p style="font-size: 1.1rem; color: #6b7280;">Transform your manufacturing conversations into actionable insights</p>
-    </div>
-    """, unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="main-header">
+            <h1>{heroicon("microphone")} AI Speech Recognition & Analysis Platform</h1>
+            <p style="font-size: 1.2rem; margin-top: 0.5rem; opacity: 0.9;">Transform your manufacturing conversations into actionable insights</p>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
     
     # Get API key
     api_key = get_api_key()
@@ -251,48 +387,42 @@ def main():
     # Sidebar
     with st.sidebar:
         st.markdown(f"""
-        <div style="margin-bottom: 1rem;">
-            <h3>{heroicon("chart", "w-5 h-5")} Demo Information</h3>
-            <div style="background: #f9fafb; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                <p><strong>What this demo shows:</strong></p>
-                <ul style="margin: 0.5rem 0;">
-                    <li>Real-time speech transcription</li>
-                    <li>Automatic speaker identification</li>
-                    <li>Manufacturing-focused analysis</li>
-                    <li>Topic detection and insights</li>
-                    <li>Export capabilities</li>
-                </ul>
-            </div>
+        <div class="info-box">
+            <h3>{heroicon("chart")} Demo Information</h3>
+            <p><strong>What this demo shows:</strong></p>
+            <ul style="margin: 0.5rem 0;">
+                <li>Real-time speech transcription</li>
+                <li>Automatic speaker identification</li>
+                <li>Manufacturing-focused analysis</li>
+                <li>Topic detection and insights</li>
+                <li>Export capabilities</li>
+            </ul>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown(f"""
-        <div style="margin-bottom: 1rem;">
-            <h3>{heroicon("target", "w-5 h-5")} Use Cases</h3>
-            <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
-                <ul style="margin: 0.5rem 0;">
-                    <li><strong>Quality Control</strong> meetings</li>
-                    <li><strong>Safety briefings</strong></li>
-                    <li><strong>Production planning</strong> sessions</li>
-                    <li><strong>Equipment maintenance</strong> discussions</li>
-                    <li><strong>Compliance monitoring</strong></li>
-                </ul>
-            </div>
+        <div class="success-box">
+            <h3>{heroicon("target")} Use Cases</h3>
+            <ul style="margin: 0.5rem 0;">
+                <li><strong>Quality Control</strong> meetings</li>
+                <li><strong>Safety briefings</strong></li>
+                <li><strong>Production planning</strong> sessions</li>
+                <li><strong>Equipment maintenance</strong> discussions</li>
+                <li><strong>Compliance monitoring</strong></li>
+            </ul>
         </div>
         """, unsafe_allow_html=True)
         
         st.markdown(f"""
-        <div>
-            <h3>{heroicon("sparkles", "w-5 h-5")} Key Benefits</h3>
-            <div style="background: #eff6ff; padding: 1rem; border-radius: 8px;">
-                <ul style="margin: 0.5rem 0;">
-                    <li><strong>99% accuracy</strong> speech recognition</li>
-                    <li><strong>Automatic documentation</strong> of meetings</li>
-                    <li><strong>Speaker identification</strong> and tracking</li>
-                    <li><strong>Manufacturing-specific</strong> insights</li>
-                    <li><strong>Instant analysis</strong> and reporting</li>
-                </ul>
-            </div>
+        <div class="info-box">
+            <h3>{heroicon("sparkles")} Key Benefits</h3>
+            <ul style="margin: 0.5rem 0;">
+                <li><strong>99% accuracy</strong> speech recognition</li>
+                <li><strong>Automatic documentation</strong> of meetings</li>
+                <li><strong>Speaker identification</strong> and tracking</li>
+                <li><strong>Manufacturing-specific</strong> insights</li>
+                <li><strong>Instant analysis</strong> and reporting</li>
+            </ul>
         </div>
         """, unsafe_allow_html=True)
     
@@ -301,7 +431,7 @@ def main():
     
     with col1:
         st.markdown(f"""
-        <h2>{heroicon("folder", "w-6 h-6")} Upload Audio</h2>
+        <h2>{heroicon("folder")} Upload Audio</h2>
         """, unsafe_allow_html=True)
         
         # Sample files section
@@ -310,11 +440,30 @@ def main():
         
         if sample_files:
             for name, file_info in sample_files.items():
-                if st.button(f"Load {name} Sample ({file_info['size']})", key=f"sample_{name}"):
-                    st.info(f"Sample file: {name} - Click 'Process Audio' to analyze")
-                    # Store the file path for processing
-                    st.session_state.sample_file = file_info['path']
-                    st.session_state.sample_name = name
+                # Show file type and size
+                file_type = file_info.get('type', 'Unknown')
+                button_text = f"Load {name} Sample ({file_info['size']}) - {file_type}"
+                
+                if st.button(button_text, key=f"sample_{name}"):
+                    if file_info['path']:  # Pre-generated file
+                        st.info(f"Sample file: {name} - Click 'Process Audio' to analyze")
+                        st.session_state.sample_file = file_info['path']
+                        st.session_state.sample_name = name
+                    else:  # Generate on demand
+                        with st.spinner(f"Generating {name} sample audio..."):
+                            client = OpenAI(api_key=api_key)
+                            temp_file_path = generate_sample_audio_on_demand(
+                                name, 
+                                file_info['script'], 
+                                client
+                            )
+                            if temp_file_path:
+                                st.success(f"Sample audio generated: {name} - Click 'Process Audio' to analyze")
+                                st.session_state.sample_file = temp_file_path
+                                st.session_state.sample_name = name
+                                st.session_state.temp_file = True  # Mark as temporary file
+                            else:
+                                st.error("Failed to generate sample audio")
         else:
             st.info("No sample files available. Upload your own audio file below.")
         
@@ -381,6 +530,13 @@ def main():
                         # Clean up temporary file if needed
                         if temp_file:
                             os.unlink(audio_file_path)
+                        elif hasattr(st.session_state, 'temp_file') and st.session_state.temp_file:
+                            # Clean up on-demand generated file
+                            try:
+                                os.unlink(audio_file_path)
+                                st.session_state.temp_file = False
+                            except:
+                                pass
                         
                         st.session_state.transcript = transcript.text
                         st.session_state.speaker_data = speaker_data
@@ -400,14 +556,14 @@ def main():
     
     with col2:
         st.markdown(f"""
-        <h2>{heroicon("document", "w-6 h-6")} Results</h2>
+        <h2>{heroicon("document")} Results</h2>
         """, unsafe_allow_html=True)
         
         if hasattr(st.session_state, 'transcript'):
             tab1, tab2, tab3 = st.tabs([
-                f"{heroicon('users', 'w-4 h-4')} Conversation",
-                f"{heroicon('chart', 'w-4 h-4')} Analysis", 
-                f"{heroicon('users', 'w-4 h-4')} Speakers"
+                f"{heroicon('users')} Conversation",
+                f"{heroicon('chart')} Analysis", 
+                f"{heroicon('users')} Speakers"
             ])
             
             with tab1:
@@ -492,7 +648,7 @@ def main():
                                 st.write(f"... and {len(st.session_state.speaker_data['speakers'][speaker]) - 3} more")
             
             # Export results
-            st.subheader(f"{heroicon('download', 'w-5 h-5')} Export Results")
+            st.subheader(f"{heroicon('download')} Export Results")
             results = {
                 "original_transcript": st.session_state.transcript,
                 "conversation_with_speakers": st.session_state.speaker_data.get("formatted_conversation", ""),
@@ -512,7 +668,7 @@ def main():
     
     # Use cases section
     st.markdown(f"""
-    <h2 style="text-align: center; margin-top: 3rem;">{heroicon("target", "w-6 h-6")} Common Use Cases</h2>
+    <h2 style="text-align: center; margin-top: 3rem;">{heroicon("target")} Common Use Cases</h2>
     <p style="text-align: center; color: #6b7280; margin-bottom: 2rem;">See how this platform handles typical manufacturing conversations</p>
     """, unsafe_allow_html=True)
     
@@ -521,7 +677,7 @@ def main():
     with demo_cols[0]:
         st.markdown(f"""
         <div class="metric-card">
-            <h4>{heroicon("shield", "w-5 h-5")} Safety Briefings</h4>
+            <h4>{heroicon("shield")} Safety Briefings</h4>
             <ul>
                 <li>Automatic documentation of safety protocols</li>
                 <li>Track PPE compliance discussions</li>
@@ -534,7 +690,7 @@ def main():
     with demo_cols[1]:
         st.markdown(f"""
         <div class="metric-card">
-            <h4>{heroicon("cog", "w-5 h-5")} Quality Control Meetings</h4>
+            <h4>{heroicon("cog")} Quality Control Meetings</h4>
             <ul>
                 <li>Document defect analysis discussions</li>
                 <li>Track quality metrics and standards</li>
@@ -547,7 +703,7 @@ def main():
     with demo_cols[2]:
         st.markdown(f"""
         <div class="metric-card">
-            <h4>{heroicon("chart", "w-5 h-5")} Production Planning</h4>
+            <h4>{heroicon("chart")} Production Planning</h4>
             <ul>
                 <li>Capture scheduling decisions</li>
                 <li>Track capacity and resource allocation</li>
