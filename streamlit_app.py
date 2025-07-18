@@ -12,19 +12,45 @@ import base64
 from datetime import datetime
 from typing import List, Dict, Any
 import streamlit as st
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except ImportError:
+    st.error("OpenAI library not installed. Please install with: pip install openai")
+    st.stop()
 import tempfile
 from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv()
 
+# Disable proxy settings that might interfere with OpenAI client on Streamlit Cloud
+os.environ.pop('HTTP_PROXY', None)
+os.environ.pop('HTTPS_PROXY', None)
+os.environ.pop('http_proxy', None)
+os.environ.pop('https_proxy', None)
+
 def get_api_key():
     """Get API key from Streamlit secrets or environment"""
+    # Try Streamlit secrets first (for cloud deployment)
     try:
-        return st.secrets["OPENAI_API_KEY"]
+        if hasattr(st, 'secrets') and 'OPENAI_API_KEY' in st.secrets:
+            return st.secrets["OPENAI_API_KEY"]
     except:
-        return os.getenv("OPENAI_API_KEY")
+        pass
+    
+    # Try environment variable (for local development)
+    api_key = os.getenv("OPENAI_API_KEY")
+    if api_key:
+        return api_key
+    
+    # Try streamlit secrets as dict access
+    try:
+        return st.secrets.get("OPENAI_API_KEY")
+    except:
+        pass
+    
+    # Return None if not found
+    return None
 
 def get_audio_base64(file_path):
     """Convert audio file to base64 for preview"""
@@ -246,7 +272,12 @@ def main():
     api_key = get_api_key()
     
     if not api_key:
-        st.error("Demo configuration required. Please contact the administrator.")
+        st.error("🔑 **OpenAI API Key Required**")
+        st.warning("**For Streamlit Cloud deployment:**")
+        st.code("Go to your app settings → Secrets → Add: OPENAI_API_KEY = 'your-api-key-here'")
+        st.warning("**For local development:**")
+        st.code("Add your API key to .env file: OPENAI_API_KEY=your-api-key-here")
+        st.info("Get your API key from: https://platform.openai.com/api-keys")
         st.stop()
     
     # Create two columns
@@ -283,19 +314,28 @@ def main():
                             st.session_state.sample_name = name
                         else:  # Generate on demand
                             with st.spinner(f"Generating {name} sample audio..."):
-                                client = OpenAI(api_key=api_key)
-                                temp_file_path = generate_sample_audio_on_demand(
-                                    name, 
-                                    file_info['script'], 
-                                    client
-                                )
-                                if temp_file_path:
-                                    st.success(f"Sample audio generated: {name}")
-                                    st.session_state.sample_file = temp_file_path
-                                    st.session_state.sample_name = name
-                                    st.session_state.temp_file = True
-                                else:
-                                    st.error("Failed to generate sample audio")
+                                # Initialize OpenAI client for sample generation
+                                try:
+                                    client = OpenAI(
+                                        api_key=api_key,
+                                        timeout=30.0,
+                                        max_retries=3
+                                    )
+                                    temp_file_path = generate_sample_audio_on_demand(
+                                        name, 
+                                        file_info['script'], 
+                                        client
+                                    )
+                                    if temp_file_path:
+                                        st.success(f"Sample audio generated: {name}")
+                                        st.session_state.sample_file = temp_file_path
+                                        st.session_state.sample_name = name
+                                        st.session_state.temp_file = True
+                                    else:
+                                        st.error("Failed to generate sample audio")
+                                except Exception as client_error:
+                                    st.error(f"Failed to initialize OpenAI client: {str(client_error)}")
+                                    st.error("Cannot generate sample audio without valid API key")
                 
                 with col_download:
                     if file_info['path'] and os.path.exists(file_info['path']):
@@ -353,7 +393,18 @@ def main():
             if st.button("🚀 Process Audio", type="primary"):
                 with st.spinner("Processing audio..."):
                     try:
-                        client = OpenAI(api_key=api_key)
+                        # Initialize OpenAI client with proper error handling
+                        try:
+                            # Initialize with explicit parameters to avoid proxy injection
+                            client = OpenAI(
+                                api_key=api_key,
+                                timeout=30.0,
+                                max_retries=3
+                            )
+                        except Exception as client_error:
+                            st.error(f"Failed to initialize OpenAI client: {str(client_error)}")
+                            st.error("This may be due to an invalid API key or proxy configuration issue.")
+                            return
                         
                         # Handle file paths
                         if isinstance(file_to_process, str):  # Sample file
