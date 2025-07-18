@@ -1,56 +1,53 @@
 #!/usr/bin/env python3
 """
 AI Speech Recognition & Analysis Platform
-- Streamlit Community Cloud deployment
-- Uses OpenAI Whisper API + GPT-4 for speaker detection
-- Professional client demo interface
+- Clean Streamlit components only
+- Proper audio preview with base64 encoding
+- No CSS overrides
 """
 
 import os
 import json
-import re
+import base64
 from datetime import datetime
 from typing import List, Dict, Any
 import streamlit as st
 from openai import OpenAI
 import tempfile
-import requests
-import base64
 from dotenv import load_dotenv
 
-# Load environment variables from .env file (for local development)
+# Load environment variables
 load_dotenv()
 
-# Configuration for Streamlit Cloud
 def get_api_key():
     """Get API key from Streamlit secrets or environment"""
     try:
-        # Try Streamlit secrets first (for cloud deployment)
         return st.secrets["OPENAI_API_KEY"]
     except:
-        # Fallback to environment variable (for local development)
         return os.getenv("OPENAI_API_KEY")
 
-def heroicon(name, size="16"):
-    """Return heroicon as emoji fallback for better compatibility"""
-    icons = {
-        "microphone": "🎤",
-        "upload": "📁",
-        "users": "👥",
-        "chart": "📊",
-        "clock": "⏰",
-        "shield": "🛡️",
-        "cog": "⚙️",
-        "play": "▶️",
-        "download": "💾",
-        "exclamation": "⚠️",
-        "check": "✅",
-        "folder": "📁",
-        "document": "📄",
-        "sparkles": "✨",
-        "target": "🎯",
-    }
-    return icons.get(name, "")
+def get_audio_base64(file_path):
+    """Convert audio file to base64 for preview"""
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode()
+    except Exception as e:
+        st.error(f"Error loading audio: {str(e)}")
+        return None
+
+def create_audio_player(file_path, audio_format="mp3"):
+    """Create HTML audio player with base64 data"""
+    b64_data = get_audio_base64(file_path)
+    if b64_data:
+        audio_html = f"""
+        <audio controls style="width: 100%;">
+            <source src="data:audio/{audio_format};base64,{b64_data}" type="audio/{audio_format}">
+            Your browser does not support the audio element.
+        </audio>
+        """
+        return audio_html
+    return None
 
 def generate_sample_audio_on_demand(scenario_name, script_text, client):
     """Generate sample audio on-demand using OpenAI TTS"""
@@ -62,7 +59,6 @@ def generate_sample_audio_on_demand(scenario_name, script_text, client):
             speed=1.0
         )
         
-        # Create a temporary file
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".mp3")
         response.stream_to_file(temp_file.name)
         return temp_file.name
@@ -75,7 +71,7 @@ def get_sample_scenarios():
     return {
         "Safety Briefing": {
             "script": "Safety Manager: Good morning everyone. Let's start with our weekly safety review. We had an incident yesterday with improper PPE usage. John: Yes, I noticed some workers weren't wearing safety glasses in the welding area. Safety Manager: That's unacceptable. We need to reinforce our safety protocols immediately. All employees must wear proper protective equipment at all times. John: I'll schedule additional training sessions for the welding department. Safety Manager: Good. Let's also review our lockout tagout procedures to ensure everyone understands the importance of safety first.",
-            "type": "Unidirectional"
+            "type": "Bidirectional"
         },
         "Quality Control Meeting": {
             "script": "QC Manager: We need to discuss the quality issues found in yesterday's production batch. Inspector: I found defects in 15% of the units from batch 237. The main issue is with the tolerance levels on the mounting brackets. QC Manager: What's causing this deviation? Inspector: It appears to be a calibration issue with machine number 3. The tool wear indicators show it's due for maintenance. QC Manager: We need to halt production on that machine immediately and quarantine all affected parts until we can verify quality standards are met.",
@@ -88,7 +84,7 @@ def get_sample_scenarios():
     }
 
 def load_sample_audio_files():
-    """Load available sample audio files for users to test"""
+    """Load available sample audio files"""
     sample_files = {}
     
     # Check for local sample files first
@@ -118,7 +114,7 @@ def load_sample_audio_files():
         scenarios = get_sample_scenarios()
         for name, data in scenarios.items():
             sample_files[name] = {
-                "path": None,  # Will be generated on demand
+                "path": None,
                 "size": "Generate on demand",
                 "type": data["type"],
                 "script": data["script"]
@@ -239,143 +235,12 @@ def main():
     st.set_page_config(
         page_title="AI Speech Recognition & Analysis Platform",
         page_icon="🎤",
-        layout="wide",
-        initial_sidebar_state="expanded"
+        layout="wide"
     )
     
-    # Custom CSS for professional styling
-    st.markdown("""
-    <style>
-        /* Global styling */
-        .main .block-container {
-            padding-top: 2rem;
-            padding-bottom: 2rem;
-        }
-        
-        /* Hero icons styling */
-        .hero-icon {
-            display: inline-block;
-            vertical-align: middle;
-            margin-right: 8px;
-        }
-        
-        /* Card styling */
-        .metric-card {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-            margin-bottom: 1rem;
-        }
-        
-        /* Speaker tags */
-        .speaker-tag {
-            display: inline-block;
-            padding: 6px 12px;
-            margin: 4px;
-            border-radius: 16px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-        .speaker-a { background: #dbeafe; color: #1e40af; }
-        .speaker-b { background: #dcfce7; color: #166534; }
-        .speaker-c { background: #fef3c7; color: #92400e; }
-        
-        /* Header styling */
-        .main-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 16px;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        
-        /* Sidebar styling */
-        .sidebar .sidebar-content {
-            background: #f8fafc;
-            padding: 1rem;
-            border-radius: 12px;
-        }
-        
-        /* Info boxes */
-        .info-box {
-            background: #f0f9ff;
-            border: 1px solid #0ea5e9;
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-        
-        .success-box {
-            background: #f0fdf4;
-            border: 1px solid #22c55e;
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-        
-        .warning-box {
-            background: #fffbeb;
-            border: 1px solid #f59e0b;
-            border-radius: 8px;
-            padding: 1rem;
-            margin: 1rem 0;
-        }
-        
-        /* Footer */
-        .footer {
-            text-align: center;
-            color: #6b7280;
-            font-size: 14px;
-            margin-top: 3rem;
-            padding: 2rem;
-            border-top: 2px solid #e5e7eb;
-            background: #f9fafb;
-            border-radius: 12px;
-        }
-        
-        /* Button styling */
-        .stButton > button {
-            border-radius: 8px;
-            border: 1px solid #d1d5db;
-            background: white;
-            color: #374151;
-            font-weight: 500;
-            transition: all 0.2s;
-        }
-        
-        .stButton > button:hover {
-            background: #f3f4f6;
-            border-color: #9ca3af;
-        }
-        
-        /* Tab styling */
-        .stTabs [data-baseweb="tab-list"] {
-            gap: 8px;
-        }
-        
-        .stTabs [data-baseweb="tab"] {
-            border-radius: 8px;
-            padding: 8px 16px;
-            font-weight: 500;
-        }
-    </style>
-    """, unsafe_allow_html=True)
-    
-    # Header
-    st.markdown(
-        f"""
-        <div class="main-header">
-            <h1>{heroicon("microphone")} AI Speech Recognition & Analysis Platform</h1>
-            <p style="font-size: 1.2rem; margin-top: 0.5rem; opacity: 0.9;">Transform your manufacturing conversations into actionable insights</p>
-        </div>
-        """, 
-        unsafe_allow_html=True
-    )
+    # Simple header
+    st.title("🎤 AI Speech Recognition & Analysis Platform")
+    st.markdown("**Transform your manufacturing conversations into actionable insights**")
     
     # Get API key
     api_key = get_api_key()
@@ -384,108 +249,94 @@ def main():
         st.error("Demo configuration required. Please contact the administrator.")
         st.stop()
     
-    # Sidebar
-    with st.sidebar:
-        st.markdown(f"""
-        <div class="info-box">
-            <h3>{heroicon("chart")} Demo Information</h3>
-            <p><strong>What this demo shows:</strong></p>
-            <ul style="margin: 0.5rem 0;">
-                <li>Real-time speech transcription</li>
-                <li>Automatic speaker identification</li>
-                <li>Manufacturing-focused analysis</li>
-                <li>Topic detection and insights</li>
-                <li>Export capabilities</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown(f"""
-        <div class="success-box">
-            <h3>{heroicon("target")} Use Cases</h3>
-            <ul style="margin: 0.5rem 0;">
-                <li><strong>Quality Control</strong> meetings</li>
-                <li><strong>Safety briefings</strong></li>
-                <li><strong>Production planning</strong> sessions</li>
-                <li><strong>Equipment maintenance</strong> discussions</li>
-                <li><strong>Compliance monitoring</strong></li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        st.markdown(f"""
-        <div class="info-box">
-            <h3>{heroicon("sparkles")} Key Benefits</h3>
-            <ul style="margin: 0.5rem 0;">
-                <li><strong>99% accuracy</strong> speech recognition</li>
-                <li><strong>Automatic documentation</strong> of meetings</li>
-                <li><strong>Speaker identification</strong> and tracking</li>
-                <li><strong>Manufacturing-specific</strong> insights</li>
-                <li><strong>Instant analysis</strong> and reporting</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Main content
+    # Create two columns
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        st.markdown(f"""
-        <h2>{heroicon("folder")} Upload Audio</h2>
-        """, unsafe_allow_html=True)
+        st.header("📁 Upload Audio")
         
         # Sample files section
-        st.markdown("**Try our sample files first:**")
+        st.subheader("Try our sample files first:")
         sample_files = load_sample_audio_files()
         
         if sample_files:
             for name, file_info in sample_files.items():
-                # Show file type and size
-                file_type = file_info.get('type', 'Unknown')
-                button_text = f"Load {name} Sample ({file_info['size']}) - {file_type}"
+                st.write(f"**🔊 {name}**")
+                st.write(f"Type: {file_info.get('type', 'Audio')} | Size: {file_info['size']}")
                 
-                if st.button(button_text, key=f"sample_{name}"):
-                    if file_info['path']:  # Pre-generated file
-                        st.info(f"Sample file: {name} - Click 'Process Audio' to analyze")
-                        st.session_state.sample_file = file_info['path']
-                        st.session_state.sample_name = name
-                    else:  # Generate on demand
-                        with st.spinner(f"Generating {name} sample audio..."):
-                            client = OpenAI(api_key=api_key)
-                            temp_file_path = generate_sample_audio_on_demand(
-                                name, 
-                                file_info['script'], 
-                                client
+                # Audio preview if file exists
+                if file_info['path'] and os.path.exists(file_info['path']):
+                    audio_html = create_audio_player(file_info['path'])
+                    if audio_html:
+                        st.markdown(audio_html, unsafe_allow_html=True)
+                    else:
+                        st.info("Audio file ready for processing")
+                
+                # Buttons
+                col_load, col_download = st.columns([3, 1])
+                
+                with col_load:
+                    if st.button(f"Load {name} for Analysis", key=f"sample_{name}"):
+                        if file_info['path']:  # Pre-generated file
+                            st.success(f"Sample file loaded: {name}")
+                            st.session_state.sample_file = file_info['path']
+                            st.session_state.sample_name = name
+                        else:  # Generate on demand
+                            with st.spinner(f"Generating {name} sample audio..."):
+                                client = OpenAI(api_key=api_key)
+                                temp_file_path = generate_sample_audio_on_demand(
+                                    name, 
+                                    file_info['script'], 
+                                    client
+                                )
+                                if temp_file_path:
+                                    st.success(f"Sample audio generated: {name}")
+                                    st.session_state.sample_file = temp_file_path
+                                    st.session_state.sample_name = name
+                                    st.session_state.temp_file = True
+                                else:
+                                    st.error("Failed to generate sample audio")
+                
+                with col_download:
+                    if file_info['path'] and os.path.exists(file_info['path']):
+                        with open(file_info['path'], "rb") as file:
+                            st.download_button(
+                                label="Download",
+                                data=file.read(),
+                                file_name=f"{name.lower().replace(' ', '_')}.mp3",
+                                mime="audio/mpeg",
+                                key=f"download_{name}"
                             )
-                            if temp_file_path:
-                                st.success(f"Sample audio generated: {name} - Click 'Process Audio' to analyze")
-                                st.session_state.sample_file = temp_file_path
-                                st.session_state.sample_name = name
-                                st.session_state.temp_file = True  # Mark as temporary file
-                            else:
-                                st.error("Failed to generate sample audio")
-        else:
-            st.info("No sample files available. Upload your own audio file below.")
+                
+                st.divider()
         
+        # File uploader
+        st.subheader("Or upload your own audio file:")
         uploaded_file = st.file_uploader(
-            "Or upload your own audio file",
+            "Choose an audio file",
             type=['mp3', 'wav', 'm4a', 'flac', 'ogg'],
             help="Supported formats: MP3, WAV, M4A, FLAC, OGG"
         )
         
-        # Show file status
+        # Handle file processing
         file_to_process = None
         file_name = None
+        cached_audio_bytes = None
         
         if uploaded_file is not None:
             st.success(f"File uploaded: {uploaded_file.name}")
             
-            file_size = len(uploaded_file.getvalue()) / 1024 / 1024
+            # Cache audio bytes
+            cached_audio_bytes = uploaded_file.getvalue()
+            file_size = len(cached_audio_bytes) / 1024 / 1024
             st.info(f"File size: {file_size:.1f} MB")
             
             if file_size > 25:
                 st.error("File too large. Maximum size is 25MB.")
                 st.stop()
+            
+            # Audio preview for uploaded files
+            st.audio(cached_audio_bytes, format=f"audio/{uploaded_file.name.split('.')[-1]}")
             
             file_to_process = uploaded_file
             file_name = uploaded_file.name
@@ -497,22 +348,27 @@ def main():
             file_to_process = st.session_state.sample_file
             file_name = st.session_state.sample_name
         
+        # Process button
         if file_to_process is not None:
-            if st.button("Process Audio", type="primary"):
+            if st.button("🚀 Process Audio", type="primary"):
                 with st.spinner("Processing audio..."):
                     try:
                         client = OpenAI(api_key=api_key)
                         
-                        # Handle both uploaded files and sample files
-                        if isinstance(file_to_process, str):  # Sample file path
+                        # Handle file paths
+                        if isinstance(file_to_process, str):  # Sample file
                             audio_file_path = file_to_process
                             temp_file = False
                         else:  # Uploaded file
                             with tempfile.NamedTemporaryFile(delete=False, suffix=f".{file_to_process.name.split('.')[-1]}") as tmp_file:
-                                tmp_file.write(file_to_process.getvalue())
+                                if cached_audio_bytes is not None:
+                                    tmp_file.write(cached_audio_bytes)
+                                else:
+                                    tmp_file.write(file_to_process.getvalue())
                                 audio_file_path = tmp_file.name
                             temp_file = True
                         
+                        # Process audio
                         st.info("Step 1: Converting speech to text...")
                         with open(audio_file_path, "rb") as audio_file:
                             transcript = client.audio.transcriptions.create(
@@ -527,24 +383,18 @@ def main():
                         st.info("Step 3: Analyzing conversation...")
                         analysis = analyze_text_with_speakers(transcript.text, speaker_data)
                         
-                        # Clean up temporary file if needed
+                        # Clean up temp file
                         if temp_file:
                             os.unlink(audio_file_path)
-                        elif hasattr(st.session_state, 'temp_file') and st.session_state.temp_file:
-                            # Clean up on-demand generated file
-                            try:
-                                os.unlink(audio_file_path)
-                                st.session_state.temp_file = False
-                            except:
-                                pass
                         
+                        # Store results
                         st.session_state.transcript = transcript.text
                         st.session_state.speaker_data = speaker_data
                         st.session_state.analysis = analysis
                         st.session_state.timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         st.session_state.processed_file = file_name
                         
-                        st.success("Processing complete!")
+                        st.success("✅ Processing complete!")
                         
                     except Exception as e:
                         st.error(f"Error: {str(e)}")
@@ -555,16 +405,11 @@ def main():
                                 pass
     
     with col2:
-        st.markdown(f"""
-        <h2>{heroicon("document")} Results</h2>
-        """, unsafe_allow_html=True)
+        st.header("📊 Results")
         
         if hasattr(st.session_state, 'transcript'):
-            tab1, tab2, tab3 = st.tabs([
-                f"{heroicon('users')} Conversation",
-                f"{heroicon('chart')} Analysis", 
-                f"{heroicon('users')} Speakers"
-            ])
+            # Create tabs for results
+            tab1, tab2, tab3 = st.tabs(["💬 Conversation", "📈 Analysis", "👥 Speakers"])
             
             with tab1:
                 st.subheader("Conversation with Speakers")
@@ -578,18 +423,19 @@ def main():
                             speaker = speaker_part.strip()
                             text = text_part.strip()
                             
+                            # Display with speaker tags
                             if "Speaker A" in speaker:
-                                st.markdown(f'<div class="speaker-tag speaker-a">{speaker}</div> {text}', unsafe_allow_html=True)
+                                st.markdown(f"**{speaker}:** {text}")
                             elif "Speaker B" in speaker:
-                                st.markdown(f'<div class="speaker-tag speaker-b">{speaker}</div> {text}', unsafe_allow_html=True)
+                                st.markdown(f"**{speaker}:** {text}")
                             elif "Speaker C" in speaker:
-                                st.markdown(f'<div class="speaker-tag speaker-c">{speaker}</div> {text}', unsafe_allow_html=True)
+                                st.markdown(f"**{speaker}:** {text}")
                             else:
-                                st.markdown(f'<div class="speaker-tag">{speaker}</div> {text}', unsafe_allow_html=True)
+                                st.markdown(f"**{speaker}:** {text}")
                         else:
                             st.markdown(line)
                 
-                with st.expander("Original Transcript"):
+                with st.expander("View Original Transcript"):
                     st.text_area(
                         "Raw transcription:",
                         st.session_state.transcript,
@@ -598,40 +444,44 @@ def main():
                     )
             
             with tab2:
-                st.subheader("Analysis")
+                st.subheader("Analysis Summary")
                 analysis = st.session_state.analysis
                 
-                metric_cols = st.columns(4)
-                with metric_cols[0]:
+                # Metrics
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
                     st.metric("Words", analysis["word_count"])
-                with metric_cols[1]:
+                with col2:
                     st.metric("Duration", analysis["estimated_duration"])
-                with metric_cols[2]:
+                with col3:
                     st.metric("Speakers", analysis["total_speakers"])
-                with metric_cols[3]:
-                    st.metric("Safety", analysis["safety_mentions"])
+                with col4:
+                    st.metric("Safety Mentions", analysis["safety_mentions"])
                 
                 st.info(f"**Main Topic:** {analysis['main_topic']}")
                 
+                # Key points
                 if analysis["key_points"]:
                     st.subheader("Key Points")
                     for i, point in enumerate(analysis["key_points"], 1):
                         st.write(f"{i}. {point}")
                 
+                # Topic analysis
                 if analysis["safety_mentions"] > 0:
-                    st.warning(f"**Safety Discussion**: {analysis['safety_mentions']} safety-related mentions")
+                    st.warning(f"🛡️ Safety Discussion: {analysis['safety_mentions']} safety-related mentions")
                 if analysis["quality_mentions"] > 0:
-                    st.info(f"**Quality Focus**: {analysis['quality_mentions']} quality-related mentions")
+                    st.info(f"🔍 Quality Focus: {analysis['quality_mentions']} quality-related mentions")
                 if analysis["production_mentions"] > 0:
-                    st.success(f"**Production Talk**: {analysis['production_mentions']} production-related mentions")
+                    st.success(f"🏭 Production Talk: {analysis['production_mentions']} production-related mentions")
             
             with tab3:
-                st.subheader("Speaker Analysis")
+                st.subheader("Speaker Breakdown")
                 
                 for speaker, stats in st.session_state.analysis["speaker_analysis"].items():
                     with st.expander(f"{speaker} - {stats['utterances']} utterances, {stats['words']} words"):
-                        col1, col2, col3 = st.columns(3)
                         
+                        # Speaker metrics
+                        col1, col2, col3 = st.columns(3)
                         with col1:
                             st.metric("Safety", stats["safety_mentions"])
                         with col2:
@@ -639,6 +489,7 @@ def main():
                         with col3:
                             st.metric("Production", stats["production_mentions"])
                         
+                        # Speaker quotes
                         if speaker in st.session_state.speaker_data.get("speakers", {}):
                             st.markdown("**What they said:**")
                             for i, utterance in enumerate(st.session_state.speaker_data["speakers"][speaker][:3], 1):
@@ -648,7 +499,7 @@ def main():
                                 st.write(f"... and {len(st.session_state.speaker_data['speakers'][speaker]) - 3} more")
             
             # Export results
-            st.subheader(f"{heroicon('download')} Export Results")
+            st.subheader("📥 Export Results")
             results = {
                 "original_transcript": st.session_state.transcript,
                 "conversation_with_speakers": st.session_state.speaker_data.get("formatted_conversation", ""),
@@ -664,101 +515,38 @@ def main():
             )
         
         else:
-            st.info("Upload an audio file or try a sample file to see results here")
+            st.markdown("### Ready for Analysis")
+            st.info("Upload an audio file or try a sample file to see results here.")
+            
+            st.markdown("**Steps:**")
+            st.markdown("1. Choose a sample file or upload your own")
+            st.markdown("2. Click 'Process Audio' button")
+            st.markdown("3. View results in the tabs above")
     
-    # Use cases section
-    st.markdown(f"""
-    <h2 style="text-align: center; margin-top: 3rem;">{heroicon("target")} Common Use Cases</h2>
-    <p style="text-align: center; color: #6b7280; margin-bottom: 2rem;">See how this platform handles typical manufacturing conversations</p>
-    """, unsafe_allow_html=True)
-    
-    demo_cols = st.columns(3)
-    
-    with demo_cols[0]:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h4>{heroicon("shield")} Safety Briefings</h4>
-            <ul>
-                <li>Automatic documentation of safety protocols</li>
-                <li>Track PPE compliance discussions</li>
-                <li>Identify safety concerns and action items</li>
-                <li>Monitor training effectiveness</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with demo_cols[1]:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h4>{heroicon("cog")} Quality Control Meetings</h4>
-            <ul>
-                <li>Document defect analysis discussions</li>
-                <li>Track quality metrics and standards</li>
-                <li>Identify root causes and solutions</li>
-                <li>Monitor compliance requirements</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with demo_cols[2]:
-        st.markdown(f"""
-        <div class="metric-card">
-            <h4>{heroicon("chart")} Production Planning</h4>
-            <ul>
-                <li>Capture scheduling decisions</li>
-                <li>Track capacity and resource allocation</li>
-                <li>Monitor deadline discussions</li>
-                <li>Optimize manufacturing processes</li>
-            </ul>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Instructions
-    with st.expander("How to use this demo"):
-        st.markdown("""
-        ### Simple Steps:
-        1. **Upload Audio File:**
-           - Click "Browse files" above
-           - Select your audio recording (MP3, WAV, M4A, etc.)
-           - Click "Process Audio"
+    # Sidebar
+    with st.sidebar:
+        st.header("Demo Information")
         
-        2. **View Results:**
-           - **Conversation tab**: See who said what with speaker identification
-           - **Analysis tab**: Topics, keywords, manufacturing insights
-           - **Speakers tab**: Individual speaker analysis and contributions
+        st.markdown("**What this demo shows:**")
+        st.markdown("- Real-time speech transcription")
+        st.markdown("- Automatic speaker identification")
+        st.markdown("- Manufacturing-focused analysis")
+        st.markdown("- Topic detection and insights")
+        st.markdown("- Export capabilities")
         
-        3. **Export Results:**
-           - Download complete analysis as JSON file
-           - Share with team or integrate into your systems
+        st.header("Use Cases")
+        st.markdown("- **Quality Control** meetings")
+        st.markdown("- **Safety briefings**")
+        st.markdown("- **Production planning** sessions")
+        st.markdown("- **Equipment maintenance** discussions")
+        st.markdown("- **Compliance monitoring**")
         
-        ### What This Demo Analyzes:
-        - **Speech-to-Text** with 99% accuracy
-        - **Speaker Identification** - who said what
-        - **Manufacturing Topics** - safety, quality, production focus
-        - **Key Insights** - action items, important points
-        - **Conversation Flow** - meeting phases and transitions
-        
-        ### Supported File Types:
-        - **Audio Formats:** MP3, WAV, M4A, FLAC, OGG
-        - **Max File Size:** 25MB
-        - **Max Duration:** 25 minutes
-        - **Multiple Speakers:** Up to 10 speakers per conversation
-        
-        ### Perfect For:
-        - **Quality Control** meetings and inspections
-        - **Safety briefings** and training sessions
-        - **Production planning** and scheduling meetings
-        - **Equipment maintenance** discussions
-        - **Compliance** and audit recordings
-        """)
-    
-    # Footer
-    st.markdown("""
-    <div class="footer">
-        <p><strong>This is a live demonstration</strong> of AI-powered speech recognition and analysis</p>
-        <p>Ready to transform your manufacturing conversations? Let's discuss implementation for your organization.</p>
-    </div>
-    """, unsafe_allow_html=True)
+        st.header("Key Benefits")
+        st.markdown("- **99% accuracy** speech recognition")
+        st.markdown("- **Automatic documentation**")
+        st.markdown("- **Speaker identification**")
+        st.markdown("- **Manufacturing insights**")
+        st.markdown("- **Instant analysis**")
 
 if __name__ == "__main__":
     main() 
