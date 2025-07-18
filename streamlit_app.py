@@ -16,6 +16,10 @@ from openai import OpenAI
 import tempfile
 import requests
 import base64
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (for local development)
+load_dotenv()
 
 # Configuration for Streamlit Cloud
 def get_api_key():
